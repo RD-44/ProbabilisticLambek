@@ -1,0 +1,136 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsthm}
+
+
+
+% start: P R E A M B L E ------------------------ P R E A M B L E ------------------------ P R E A M B L E ------------------------
+
+%\input{tikzpreamble.tex}
+
+\title{A Complete Probabilistic Semantics for Lambek Calculus}
+\author{}
+\date{}
+
+\usepackage[backend=biber,style=authoryear,natbib=true]{biblatex}
+
+
+%\usepackage{/Users/lachlanmcpheat/Dropbox/Tex/myStyle}
+
+\renewcommand{\P}{\mathcal{P}}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage[english]{babel}
+\usepackage{amsmath, amssymb}
+%\usepackage[left=1in, right=1in]{geometry}
+\usepackage{tikz}
+%\usepackage{xfp, siunitx}
+\usepackage{pgfplots}
+\usepackage{proof}
+\usepackage{dsfont}
+
+% support for linguistics examples
+\usepackage{gb4e}
+\noautomath % gb4e allows for the use of _ and ^ outside of math mode by default. \noautomath disables this feature.
+
+% figure support
+\usepackage{import}
+\usepackage{parskip}
+\usepackage{xifthen}
+\pdfminorversion=7
+\usepackage{pdfpages}
+\usepackage{transparent}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}{Lemma}
+
+\addbibresource{references.bib}
+
+\title{A Complete Probabilistic Semantics for Lambek Calculus}
+\author{Aadhavan Mamallan}
+\date{November 2025}
+
+
+\begin{document}
+
+
+
+\maketitle
+
+\section{Plan}
+
+We extend the capabilities of Lambek Calculus (LC), the logic of syntactic structure used to model natural language. We look into formalising a probabilistic semantics for LC, in the light of probabilistic methods used in natural language processing with great success. We begin by focusing on parsing, the idea of breaking down a sentence into its syntactic structure. The main limitation parsers based on LC is that a sentence may have ambiguities, resulting in several possible meanings for the sentence. With a probabilistic parser, ambiguities can be resolved by picking the derivation of a sentence with the highest probability.
+
+We start by constructing a formal way of assigning probabilities to words and extending this to sentences (these probabilities can be found by training on a large corpus of text). We then prove the soundness and completeness of LC with respect to these semantics. 
+
+Once this is done, we can compare with existing probabilistic semantics. PCFGs (Probabilistic Context Free Grammars) are a notable example. The equivalence between the expressive powers of Lambek calculus and CFGs was proven by Pentus. We can look into proving a similar equivalance between our probabilistic semantics for LC and PCFGs. 
+
+\section{Completeness}
+
+\begin{definition}
+A maximally consistent set is a subset $\Gamma$ of $\mathcal{L} \times [0, 1]$ satisfying the following constraints:
+\begin{itemize}
+    \item if $(A, p), (A, p') \in \Gamma$, then $p = p'$;
+    \item for all $(A, p), (B, s) \in \Gamma$,
+    $$
+    \begin{array}{lcl}
+         A \vdash B & \Longrightarrow & p \leqslant s. \\
+    \end{array}
+    $$
+\end{itemize}
+\end{definition}
+
+\begin{definition}
+  The canonical relation is a ternary relation $R$ on the set of maximally consistent sets defined as follows:
+  $$
+  R(\Gamma, \Delta, \Theta) := (A, p) \in \Gamma ~\&~ (B, s) \in \Delta ~\&~ (A \circ B, q) \in \Theta \Rightarrow q \leqslant p \cdot s.
+  $$
+\end{definition}
+
+
+\begin{theorem}[left application]
+$A \circ (A \setminus B) \models
+B$
+\end{theorem}
+
+\begin{proof}
+
+Let $x \in \Sigma^\ast$. We need to show that
+$v(x, A \circ (A \setminus B)) \leqslant v(x, B)$. Note that
+$$ 
+\begin{array}{rl}
+     v(x, A \circ (A \setminus B)) &  = \\
+     \max \{ v(y, A) \cdot v(z, A \setminus B) \mid R(y, z, x) \} & = \\
+     \max \{ v(y, A) \cdot \min \{ \frac{v(b, B)}{v(a, A)}\mid R(a, z, b),
+  \mbox{with $b \in \mathcal{C}$} \} \mid R(y, z, x) \} \\
+  \leq \max \{ v(y, A) \cdot \frac{v(x, B)}{v(y, A)} \mid R(y, z, x) \} \\
+  =  v(x, B)
+\end{array}
+$$
+If, for fixed $y, z \in \Sigma^\ast$,
+$$
+\begin{array}{lcl}
+\min \{ \frac{v(b, B)}{v(a, A)} \mid R(a, z, b),
+  \mbox{with $b \in \mathcal{C}$} \} & = & \frac{v(x, B)}{v(y, A)}
+\end{array}
+$$
+then these $y, z \in \Sigma^\ast$ contribute the value $v(x, B)$ to the
+calculation of the maximum.  If, on the other hand, for fixed
+$y, z \in \Sigma^\ast$, there exist $a$ and $b$ with $R(a, z, b)$ for which
+$$
+\frac{v(b, B)}{v(a, A)} < \frac{v(x, B)}{v(y, A)},
+$$
+then, due to monotonicity of multiplication, these $y, z \in \Sigma^\ast$
+contribute a value strictly less than $v(x, B)$ to the calculation of the
+maximum.  It follows that the maximum cannot exceed $v(x, B)$, as required.
+Checking of the rest of axioms and rules of inference is left to the reader.
+\end{proof}
+
+
+\printbibliography
+
+\end{document}

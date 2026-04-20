@@ -1,0 +1,693 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{csquotes}
+\usepackage[backend=biber,natbib=true]{biblatex}
+\addbibresource{references.bib}
+\usepackage{setspace}
+\usepackage{parskip}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue,
+  pdftitle={Toward a Probabilistic Semantics for the Lambek Calculus},
+  pdfauthor={}
+}
+
+\onehalfspacing
+
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+
+\newcommand{\LC}{\mathsf{L}}
+\newcommand{\At}{\mathsf{At}}
+\newcommand{\Frag}{\mathsf{Frag}}
+\newcommand{\Lex}{\mathsf{Lex}}
+\newcommand{\Sem}{\models_{\mathcal C}}
+\newcommand{\concat}{\mathbin{\cdot}}
+\newcommand{\Pow}{\mathcal{P}}
+
+\title{Toward a Probabilistic Semantics for the Lambek Calculus\\\large Formalisation, Soundness, and Directions for Completeness}
+\author{[Author Name]}
+\date{[Month Year]}
+
+\begin{document}
+
+\maketitle
+\pagenumbering{roman}
+
+\begin{abstract}
+This thesis studies a corpus-relative probabilistic semantics for the associative Lambek
+calculus. The Lambek calculus was introduced by Lambek as a logic of syntactic types and has
+since become one of the foundational systems of categorial and type-logical grammar.
+Its appeal lies in the tight match between syntax and composition: grammatical derivations
+track how word meanings combine, which makes the calculus attractive both in formal
+linguistics and in mathematically oriented approaches to natural language processing.
+
+The central motivation of this project is ambiguity. In a purely logical parser, a sentence may
+admit several derivations, all equally well-formed at the level of derivability. In practical
+language processing, however, one usually wants not merely to decide grammaticality but also
+to rank candidate analyses. Probabilistic grammars such as PCFGs and probabilistic CCGs do
+exactly this, and their empirical success suggests that a probabilistic version of Lambek-style
+parsing is worth developing. The aim here is therefore to define a semantics that assigns to a
+string and a Lambek type a value in $[0,1]$, interpreted as the probability or confidence that
+the string realises that type relative to a finite corpus.
+
+The thesis contributes a cleaned-up formalisation of this idea. The semantics is restricted to a
+finite set of observed corpus fragments, which keeps the recursive clauses well-defined and makes
+explicit the sense in which the model is corpus-relative. Particular attention is paid to technical
+subtleties that obstructed the earlier draft: words outside the corpus vocabulary are excluded
+from the formal domain instead of being given ad hoc values, atomic types not attested for a
+word receive probability $0$, and the residual clauses are defined so as to avoid division by
+zero. On the basis of these definitions, a soundness theorem is proved for the algebraic axioms
+of the associative Lambek calculus.
+
+The thesis does \emph{not} claim completeness for the probabilistic semantics introduced here.
+On the contrary, it argues that completeness is the natural next problem. Classical completeness
+results for the Lambek calculus are already known for several non-probabilistic semantics, but
+it remains open whether an analogous theorem can be obtained for the present corpus-based
+probabilistic setting. The final chapter therefore outlines future work on completeness,
+implementation, smoothing for unseen data, and empirical evaluation against existing
+probabilistic parsing frameworks.
+\end{abstract}
+
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+
+\section{Why the Lambek calculus matters}
+The Lambek calculus was introduced in \citet{Lambek1958} as a formal calculus of syntactic
+types. Its original purpose was already recognisably linguistic: to give a principled method for
+distinguishing well-formed from ill-formed strings and to model the way in which syntactic
+categories combine in natural language. Lambek's follow-up work in \citet{Lambek1961}
+further developed the type-theoretic viewpoint and helped establish categorial grammar as a
+serious mathematical approach to syntax.
+
+The importance of the Lambek calculus lies in the fact that it sits at an unusually fruitful
+intersection of logic, algebra, and linguistics. On the logical side, it is one of the prototypical
+substructural logics: order matters, and structural principles such as exchange, weakening, and
+contraction are not built in by default. On the linguistic side, this resource sensitivity is not an
+artificial restriction but an advantage, because word order and local composition are central to
+syntactic analysis. For this reason the Lambek calculus became a foundational system in the
+study of categorial and type-logical grammars \citep{vanBenthem1988,Moortgat1995Multimodal,morrill1996generalising}.
+
+A second reason for its importance is that the calculus offers an explicit bridge between syntax
+and semantics. Derivations in categorial calculi naturally correspond to compositional analyses of
+meaning, and this connection has been one of the main reasons for the enduring influence of
+Lambek-style systems in formal semantics and mathematical linguistics \citep{vanBenthem1988,Steedman2000}.
+
+\section{Completeness: classical results and the open problem of this thesis}
+There is an important distinction to make at the outset. The completeness of the \emph{classical}
+Lambek calculus is not an open problem in general. Several major completeness results are
+already known. \citet{Dosen1985} proved a completeness theorem for the Lambek calculus of
+syntactic categories; \citet{AndrekaMikulas1994} established strong completeness results for
+relational semantics; and \citet{Pentus1995} proved completeness with respect to language
+models. In addition, Pentus' work on the context-free status of Lambek grammars clarified the
+place of the calculus in formal-language theory \citep{Pentus1993,Pentus1997}.
+
+The open problem relevant to the present thesis is therefore narrower and more specific:
+\emph{is the probabilistic semantics introduced here complete for the Lambek calculus?} This
+question is open because the semantics developed in this thesis is corpus-relative, numerical,
+and intentionally partial in the sense that it is tied to observed linguistic data. The standard
+canonical-model and algebraic techniques from classical completeness proofs do not transfer
+immediately to such a setting.
+
+For that reason the present thesis focuses on soundness first. Establishing soundness is the right
+first milestone: before asking whether the semantics captures \emph{all} valid inferences, one
+must first show that every derivable Lambek inequality is semantically valid. Completeness is the
+next goal, not a claim of the present work.
+
+\section{Lambek calculus in linguistics}
+In linguistics, the Lambek calculus is best understood as part of the broader tradition of
+categorial grammar. Categories behave like types, and grammatical composition is governed by
+logical operations rather than by phrase-structure rules. This makes the calculus attractive for
+analysing phenomena where lexical information and local combinatorics are central.
+
+Type-logical grammar developed this perspective in depth and connected it to proof theory,
+formal semantics, and computational linguistics \citep{Moortgat1997,Morrill1994}. Closely related
+systems, especially Combinatory Categorial Grammar (CCG), have been particularly successful in
+wide-coverage parsing and semantic interpretation \citep{Steedman2000,ClarkCurran2007}.
+Although CCG is not identical to the Lambek calculus, the family resemblance is close enough
+that probabilistic work on CCG provides a useful source of intuition for the present project.
+
+\section{Why probabilistic semantics?}
+Pure derivability is not enough for realistic parsing. A sentence may have several syntactically
+well-formed derivations, and those derivations may correspond to different readings. This is not a
+pathology but a normal feature of natural language. A parser that returns every derivation with
+equal status is therefore mathematically respectable but practically incomplete.
+
+Probabilistic grammatical models address this by associating weights or probabilities with lexical
+choices and structural combinations. In probabilistic context-free grammars, probabilities rank
+parse trees generated by grammar rules; in probabilistic CCG, similar ideas are applied to a more
+lexicalised grammar formalism \citep{ManningSchutze1999,ClarkCurran2007}. There has also been
+explicit prior work on stochastic Lambek grammars \citep{BonfanteDeGroote2004}. The basic
+intuition is simple: if several analyses are licensed, prefer the one better supported by the data.
+
+This thesis adopts that intuition in a deliberately conservative way. Rather than starting from a
+full statistical parser, it starts from a semantic valuation $v(x,A) \in [0,1]$ for strings $x$ and
+Lambek types $A$, interpreted relative to a corpus. The main question is then whether the
+algebraic behaviour of the Lambek connectives can be captured in a way that supports a
+sound proof theory.
+
+\section{Aims and scope of the thesis}
+The thesis has four main aims.
+\begin{enumerate}[label=(\roman*)]
+    \item To motivate a probabilistic semantics for the associative Lambek calculus from the
+    perspective of parsing and ambiguity resolution.
+    \item To formalise that semantics carefully enough that the main recursive clauses are
+    mathematically well-defined.
+    \item To prove soundness of the Lambek axioms with respect to the proposed semantics.
+    \item To identify the obstacles that make completeness the next major step rather than a result
+    already achieved.
+\end{enumerate}
+
+Several things are \emph{not} attempted here. The thesis does not provide a learning algorithm for
+extracting lexical probabilities from raw corpora, does not present a full parser implementation,
+and does not prove completeness. These tasks are deferred to future work.
+
+\section{Suggested background reading}
+A useful reading path for the topics covered in this thesis is the following.
+\begin{itemize}
+    \item \citet{Lambek1958} and \citet{Lambek1961} for the original calculus of syntactic types.
+    \item \citet{vanBenthem1988}, \citet{Moortgat1997}, and \citet{Morrill1994} for type-logical and
+    categorial grammar background.
+    \item \citet{AndrekaMikulas1994}, \citet{Dosen1985}, and \citet{Pentus1995} for completeness
+    results and model theory.
+    \item \citet{GalatosJipsenKowalskiOno2007} for the broader algebraic perspective on substructural logics.
+    \item \citet{ManningSchutze1999}, \citet{Steedman2000}, and \citet{ClarkCurran2007} for
+    probabilistic parsing and CCG.
+    \item \citet{BonfanteDeGroote2004} for a directly related stochastic approach to Lambek
+    grammars.
+\end{itemize}
+
+\chapter{Literature Review}
+
+\section{Classical Lambek calculus and completeness}
+The classical literature provides an important baseline for this thesis. The original system of
+\citet{Lambek1958} and \citet{Lambek1961} was quickly recognised as more than a linguistic
+notation: it is a mathematically robust substructural logic with a rich proof theory and model
+theory. Surveys and handbook treatments such as \citet{vanBenthem1988} and
+\citet{Moortgat1997} show how the calculus sits within the wider landscape of categorial and
+type-logical grammar.
+
+For the specific question of completeness, the paper by \citet{Dosen1985} is especially relevant
+because it directly establishes a completeness theorem for the Lambek calculus of syntactic
+categories. Equally important is the relational-semantics perspective of
+\citet{AndrekaMikulas1994}, who showed that relational models yield strong completeness results
+for suitable versions of the calculus. From a language-theoretic viewpoint, \citet{Pentus1995}
+proved completeness with respect to language models, while \citet{Pentus1993} and
+\citet{Pentus1997} clarified the relation between Lambek grammars and context-free grammars.
+
+These results matter for the present thesis in two ways. First, they demonstrate that
+completeness questions for Lambek systems are deep but tractable. Second, they show that
+there are already several mathematically natural semantic classes for which completeness holds.
+This makes it reasonable to ask whether a similar story can be told for a probabilistic,
+corpus-based semantics.
+
+\section{Substructural logic and algebraic background}
+The Lambek calculus belongs to the broader family of substructural logics, where structural
+rules are controlled rather than assumed. This family includes relevance logics, linear logics, and
+other resource-sensitive systems. Standard algebraic treatments organise these systems around
+residuated structures, in which multiplication and division are linked by residuation principles
+\citep{GalatosJipsenKowalskiOno2007,DosenSchroederHeister1993}.
+
+This background is helpful because the semantics proposed in this thesis is explicitly designed to
+mirror residuation: the multiplication clause aggregates compatible decompositions of a string,
+while the two division clauses are defined by corpus-relative ratios. The result is not a standard
+residuated algebra, but it is clearly inspired by the same adjoint pattern.
+
+\section{Lambek calculus in linguistics and computational semantics}
+Within linguistics, Lambek-style systems are valued because they combine lexical sensitivity,
+word order, and compositionality in a transparent way. Textbook and monograph treatments
+such as \citet{Morrill1994} and \citet{Moortgat1997} develop the linguistic applications in detail.
+Steedman's work on CCG shows how categorial methods support wide-coverage syntactic and
+semantic analysis \citep{Steedman2000}.
+
+A further line of work connects categorial grammar to compositional models of meaning. While
+this thesis is not primarily about vector semantics, the compositional viewpoint remains relevant:
+if syntactic derivations guide semantic composition, then a probabilistic ranking over derivations
+can also be interpreted as a ranking over candidate semantic analyses. For broader motivation on
+composition-driven semantics, see \citet{CoeckeSadrzadehClark2010}.
+
+\section{Probabilistic parsing: PCFGs, probabilistic CCGs, and stochastic Lambek grammars}
+The most direct computational motivation for this thesis comes from probabilistic parsing.
+Probabilistic context-free grammars are the standard starting point for ranking parses in the
+presence of ambiguity \citep{ManningSchutze1999}. They are attractive because they combine a
+clear formal semantics with trainable numerical parameters.
+
+Probabilistic CCG takes similar ideas into a more lexicalised grammar formalism.
+\citet{ClarkCurran2007} developed a wide-coverage statistical CCG parser using log-linear models,
+showing that categorial methods can be scaled successfully when combined with probabilistic
+ranking. For the Lambek setting more directly, \citet{BonfanteDeGroote2004} proposed a
+stochastic point of view on Lambek categorial grammars, motivated precisely by the fact that
+parsing in the Lambek calculus is inherently non-deterministic.
+
+These works suggest that a probabilistic Lambek semantics is not an isolated curiosity. It sits at
+a natural intersection of logical grammar and statistical parsing.
+
+\section{Recent model-theoretic developments}
+Recent work by Stepan Kuznetsov and collaborators shows that semantics and completeness for
+Lambek-style systems remain active research topics. Of particular relevance is
+\citet{Kuznetsov2023}, which revisits relational semantics for extensions of the Lambek calculus
+and carefully distinguishes weak from strong completeness. Likewise,
+\citet{KanovichKuznetsovScedrov2022} studies language models for extensions of the Lambek
+calculus and highlights how adding connectives or constants can significantly affect completeness
+behaviour.
+
+For this thesis, the lesson is methodological: completeness is subtle even in well-studied,
+non-probabilistic extensions. That makes it plausible that the completeness problem for a
+corpus-relative probabilistic semantics will require new ideas rather than a straightforward
+adaptation of existing proofs.
+
+\section{Position of the present thesis}
+The literature therefore leaves a clear space for the present project. On one side we have a
+well-developed proof theory and completeness theory for classical Lambek calculi. On the other
+side we have successful probabilistic grammar formalisms, together with some directly related
+stochastic Lambek work. What is still missing is a careful, thesis-length account of a
+corpus-based probabilistic semantics that is explicit about its formal choices, honest about its
+limitations, and rigorous at least on soundness. That is the niche this thesis aims to fill.
+
+\chapter{Formalisation}
+
+\section{Parsing goal and modelling stance}
+The intended task is the following: given a finite corpus $\mathcal C$ of sentences and a string of
+words drawn from the corpus vocabulary, we want to assign Lambek types to that string and,
+when several parses are available, rank them probabilistically. In other words, the model is not
+only a recogniser of grammaticality but a \emph{ranker} of candidate analyses.
+
+The formalisation in this thesis deliberately simplifies several practical issues.
+\begin{itemize}
+    \item It assumes that lexical type probabilities are already available, either from manual
+    annotation or from a prior learning stage.
+    \item It does not handle words outside the corpus vocabulary.
+    \item It treats probabilities as corpus-relative confidence values rather than as a fully learned
+    generative model.
+    \item It abstracts away from implementation issues such as chart parsing, estimation, and
+    smoothing.
+\end{itemize}
+These choices are not defects so much as scope restrictions: they isolate the semantic core that
+is needed for the soundness proof.
+
+\section{Syntax of the associative Lambek calculus}
+Let $\At$ be a non-empty set of atomic types. The set of Lambek formulae is generated by the
+grammar
+\[
+A ::= p \mid A \backslash A \mid A / A \mid A \concat A
+\qquad (p \in \At).
+\]
+We work with the associative Lambek calculus, written $\LC$, in an algebraic presentation. The
+primitive relation $\vdash_{\LC}$ is a preorder on formulae generated by the following validities:
+\begin{align*}
+& A \vdash_{\LC} A, \\
+& (A \concat B) \concat C \vdash_{\LC} A \concat (B \concat C), \\
+& A \concat (B \concat C) \vdash_{\LC} (A \concat B) \concat C, \\
+& A \concat B \vdash_{\LC} C \iff A \vdash_{\LC} C/B, \\
+& A \concat B \vdash_{\LC} C \iff B \vdash_{\LC} A\backslash C,
+\end{align*}
+and transitivity.
+
+This is equivalent in spirit to the usual residuated presentation of the associative Lambek
+calculus. It is particularly convenient here because the soundness proof proceeds by checking the
+validity of identity, associativity, residuation, and transitivity under the proposed semantics.
+
+\section{Corpus fragments and vocabulary}
+Let $\mathcal C$ be a finite corpus of sentences over a finite vocabulary $\Sigma$. We denote $\Sigma^+$ to be the set of finite non-empty strings from vocabulary $\Sigma$. In order to keep the
+semantics finite and directly tied to parsing data, let $\Frag(\mathcal C)$ be the set of all non-empty
+contiguous strings that occur in at least one sentence in $\mathcal C$. Thus:
+\[
+\Frag(\mathcal C) \subseteq \Sigma^+.
+\]
+Because $\mathcal C$ is finite, the set $\Frag(\mathcal C)$ is finite as well.
+
+The choice of $\Frag(\mathcal C)$ rather than all of $\Sigma^+$ is deliberate. It reflects the fact that
+this semantics is trained and evaluated relative to observed data. It also ensures that the minima
+and maxima appearing in the recursive clauses below are taken over finite sets. Extending the
+semantics to arbitrary strings over $\Sigma$ would require a separate treatment of unseen data,
+which is left to future work.
+
+\section{Lexical probabilities}
+We assume a lexical probability assignment
+\[
+\Lex : \Sigma \times \At \to [0,1]
+\]
+such that for every word $w \in \Sigma$,
+\[
+\sum_{p \in \At} \Lex(w,p) = 1,
+\]
+where all but finitely many summands are zero. Intuitively, $\Lex(w,p)$ is the probability that
+the word $w$ is assigned the atomic type $p$.
+
+\begin{remark}
+If a word $w \in \Sigma$ occurs in the corpus but is never assigned an atomic type $p$, then
+$\Lex(w,p)=0$. This matches the intuition from the draft: lack of attestation for a type within
+the observed vocabulary should count against that type.
+\end{remark}
+
+\begin{remark}
+Words outside the corpus vocabulary are not assigned probabilities here at all. Rather than
+assigning them an arbitrary value such as $0$ or leaving them as exceptional elements with
+undefined behaviour, they are simply excluded from the domain of the semantics. This keeps the
+formal system clean and makes explicit that out-of-vocabulary handling is a future extension.
+\end{remark}
+
+\section{Probabilistic valuation}
+We now define a valuation
+\[
+v : \Frag(\mathcal C) \times \mathrm{Fm}(\LC) \to [0,1].
+\]
+The definition proceeds by recursion on formula complexity.
+
+\begin{definition}[Atomic clauses]
+For $x \in \Frag(\mathcal C)$ and $p \in \At$, define
+\[
+v(x,p) =
+\begin{cases}
+\Lex(x,p) & \text{if $x$ is a single word in $\Sigma$,}\\
+0 & \text{if $x$ has length greater than $1$.}
+\end{cases}
+\]
+\end{definition}
+
+The second clause is a modelling choice: atomic categories are taken to be lexical categories of
+single words. One could allow atomic categories for longer fragments as well, but that would
+require extra data and is unnecessary for the present soundness result.
+
+\begin{definition}[Product]
+For $x \in \Frag(\mathcal C)$,
+\[
+v(x,A\concat B)
+= \max\{v(y,A)\,v(z,B) \mid y,z \in \Frag(\mathcal C),\ yz=x\},
+\]
+with the convention that the maximum of the empty set is $0$.
+\end{definition}
+
+This says that the probability of $x$ having composite type $A\concat B$ is the best score among
+all observed binary decompositions of $x$ into a left part of type $A$ and a right part of type
+$B$.
+
+\begin{definition}[Left residual]
+For $x \in \Frag(\mathcal C)$,
+\[
+v(x,A\backslash B)
+= \min\Bigl(\{1\} \cup
+\Bigl\{\min\bigl(1,\frac{v(w,B)}{v(y,A)}\bigr)
+\ \Bigm|\ y \in \Frag(\mathcal C),\ yx=w \in \Frag(\mathcal C),\ v(y,A)>0\Bigr\}\Bigr).
+\]
+\end{definition}
+
+\begin{definition}[Right residual]
+For $x \in \Frag(\mathcal C)$,
+\[
+v(x,B/A)
+= \min\Bigl(\{1\} \cup
+\Bigl\{\min\bigl(1,\frac{v(w,B)}{v(y,A)}\bigr)
+\ \Bigm|\ y \in \Frag(\mathcal C),\ xy=w \in \Frag(\mathcal C),\ v(y,A)>0\Bigr\}\Bigr).
+\]
+\end{definition}
+
+\section{Why these clauses are well-defined}
+The original draft raised two technical problems: division by zero in the residual definitions and
+the treatment of words not present in the corpus. The present formalisation resolves both.
+
+First, division by zero is avoided by restricting the residual minima to witnesses with positive
+denominator, i.e. to contexts $y$ such that $v(y,A)>0$. If no such witness exists, the set in the
+minimum collapses to $\{1\}$ and the value becomes $1$. This is a natural default: in the absence
+of any positively supported counterevidence, the residual connective is not forced below $1$.
+The inner truncation $\min(1,\_)$ ensures that the value stays in the interval $[0,1]$.
+
+Second, out-of-vocabulary words are excluded from the domain entirely. The semantics is not a
+universal language model over all possible strings; it is a finite, corpus-relative semantics for
+observed fragments. This is consistent with the stated goal of the thesis, namely to parse strings
+of words drawn from the corpus vocabulary.
+
+\begin{remark}[Subtleties not captured by the present formalisation]
+The following issues are intentionally left outside the formal model.
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Learning from raw corpora.} The formalisation assumes lexical probabilities are
+    already given, whereas a practical system would need to infer them.
+    \item \textbf{Out-of-vocabulary generalisation.} Smoothing, backoff, or subword modelling would be
+    needed for real applications.
+    \item \textbf{Global normalisation.} The values $v(x,A)$ behave as probabilities locally, but the model is
+    not presented here as a full generative probability distribution over derivation trees.
+    \item \textbf{Unseen but grammatical strings.} By working over $\Frag(\mathcal C)$, the semantics is tied to
+    attested fragments rather than all strings over $\Sigma$.
+\end{enumerate}
+These restrictions should be read as part of the thesis scope, not as permanent limitations on
+future versions of the model.
+\end{remark}
+
+\section{Semantic consequence}
+\begin{definition}
+For formulae $A$ and $B$, define
+\[
+A \Sem B
+\quad\text{iff}\quad
+v(x,A) \leq v(x,B) \text{ for all } x \in \Frag(\mathcal C).
+\]
+\end{definition}
+
+Thus $A \Sem B$ means that every observed fragment is at least as probable as a realisation of
+$B$ as it is as a realisation of $A$. This is the semantic preorder with respect to which soundness
+will be proved.
+
+\chapter{Soundness}
+
+\section{Strategy of proof}
+We now prove that the proposed semantics is sound for the associative Lambek calculus. Since
+$\LC$ is generated by identity, associativity, residuation, and transitivity, it is enough to verify
+that each of these principles is valid under $\Sem$.
+
+\begin{theorem}[Identity]
+For every formula $A$, we have $A \Sem A$.
+\end{theorem}
+
+\begin{proof}
+For every $x \in \Frag(\mathcal C)$, we trivially have $v(x,A) \leq v(x,A)$. Hence $A \Sem A$.
+\end{proof}
+
+\section{Associativity of product}
+\begin{theorem}[Associativity]
+For all formulae $A,B,C$,
+\[
+(A\concat B)\concat C \Sem A\concat(B\concat C)
+\qquad\text{and}\qquad
+A\concat(B\concat C) \Sem (A\concat B)\concat C.
+\]
+\end{theorem}
+
+\begin{proof}
+Let $x \in \Frag(\mathcal C)$. By definition,
+\begin{align*}
+v(x,(A\concat B)\concat C)
+&= \max\{v(u,A\concat B)\,v(w,C) \mid uw=x\} \\
+&= \max\{v(y,A)\,v(z,B)\,v(w,C) \mid yz=u,\ uw=x\}.
+\end{align*}
+Since string concatenation is associative, choosing $u,w$ with $uw=x$ and then $y,z$ with
+$yz=u$ is equivalent to choosing a triple $y,z,w$ with $yzw=x$. Therefore
+\[
+v(x,(A\concat B)\concat C)
+= \max\{v(y,A)\,v(z,B)\,v(w,C) \mid yzw=x\}.
+\]
+Running the same calculation from the other bracketing gives
+\[
+v(x,A\concat(B\concat C))
+= \max\{v(y,A)\,v(z,B)\,v(w,C) \mid yzw=x\}.
+\]
+Hence the two values are equal for every $x$, and the first semantic inequality follows.
+The converse direction is identical.
+\end{proof}
+
+\section{Residuation}
+The key step is to show that product and division satisfy the expected adjoint behaviour.
+
+\begin{proposition}[Right residuation]
+For all formulae $A,B,C$,
+\[
+A\concat B \Sem C
+\quad\Longleftrightarrow\quad
+A \Sem C/B.
+\]
+\end{proposition}
+
+\begin{proof}
+Suppose first that $A\concat B \Sem C$. Let $x \in \Frag(\mathcal C)$. We must show that
+$v(x,A) \leq v(x,C/B)$.
+
+If the defining set for $v(x,C/B)$ contributes no witness beyond the default element $1$, then
+$v(x,C/B)=1$ and the claim is immediate because $v(x,A) \in [0,1]$.
+
+Otherwise take any $y \in \Frag(\mathcal C)$ such that $xy=w \in \Frag(\mathcal C)$ and
+$v(y,B)>0$. Since $xy=w$, the decomposition $w=xy$ is one of the candidates in the product
+clause, hence
+\[
+v(w,A\concat B) \geq v(x,A)\,v(y,B).
+\]
+By the assumption $A\concat B \Sem C$, we have $v(w,A\concat B) \leq v(w,C)$. Therefore
+\[
+v(x,A)\,v(y,B) \leq v(w,C).
+\]
+Because $v(y,B)>0$, division yields
+\[
+v(x,A) \leq \frac{v(w,C)}{v(y,B)}.
+\]
+As also $v(x,A)\leq 1$, we obtain
+\[
+v(x,A) \leq \min\Bigl(1,\frac{v(w,C)}{v(y,B)}\Bigr).
+\]
+This holds for every admissible witness $y$, so after taking the minimum in the definition of
+$v(x,C/B)$ we conclude that $v(x,A) \leq v(x,C/B)$.
+
+Conversely, assume $A \Sem C/B$. Let $w \in \Frag(\mathcal C)$. We show that
+$v(w,A\concat B) \leq v(w,C)$. Consider any decomposition $w=xy$ with $x,y \in \Frag(\mathcal C)$.
+If $v(y,B)=0$, then
+\[
+v(x,A)\,v(y,B)=0 \leq v(w,C).
+\]
+If $v(y,B)>0$, then by the assumption $A \Sem C/B$ we have
+\[
+v(x,A) \leq v(x,C/B).
+\]
+Now the definition of $v(x,C/B)$ is a minimum over admissible witnesses, one of which is
+precisely the present decomposition $xy=w$. Hence
+\[
+v(x,C/B) \leq \min\Bigl(1,\frac{v(w,C)}{v(y,B)}\Bigr).
+\]
+Combining the two inequalities and multiplying by $v(y,B)$ gives
+\[
+v(x,A)\,v(y,B) \leq v(w,C).
+\]
+Thus every candidate product score for a split of $w$ is bounded above by $v(w,C)$, and so
+its maximum is as well:
+\[
+v(w,A\concat B) \leq v(w,C).
+\]
+Therefore $A\concat B \Sem C$.
+\end{proof}
+
+\begin{proposition}[Left residuation]
+For all formulae $A,B,C$,
+\[
+A\concat B \Sem C
+\quad\Longleftrightarrow\quad
+B \Sem A\backslash C.
+\]
+\end{proposition}
+
+\begin{proof}
+The proof is symmetric to the previous one. Instead of decompositions of the form $xy=w$, one
+uses decompositions of the form $yx=w$, which are exactly the contexts quantified over in the
+definition of $v(x,A\backslash C)$.
+\end{proof}
+
+\section{Transitivity}
+\begin{theorem}[Transitivity]
+If $A \Sem B$ and $B \Sem C$, then $A \Sem C$.
+\end{theorem}
+
+\begin{proof}
+Let $x \in \Frag(\mathcal C)$. By assumption,
+\[
+v(x,A) \leq v(x,B)
+\qquad\text{and}\qquad
+v(x,B) \leq v(x,C).
+\]
+Hence, by transitivity of $\leq$ on $[0,1]$, we obtain $v(x,A) \leq v(x,C)$. Since $x$ was
+arbitrary, $A \Sem C$.
+\end{proof}
+
+\section{Main soundness theorem}
+\begin{theorem}[Soundness]
+If $A \vdash_{\LC} B$, then $A \Sem B$.
+\end{theorem}
+
+\begin{proof}
+Identity, associativity, residuation, and transitivity have all been shown valid under $\Sem$.
+Since $\vdash_{\LC}$ is generated by these principles, every derivable inequality is semantically
+valid. Therefore $A \vdash_{\LC} B$ implies $A \Sem B$.
+\end{proof}
+
+\begin{remark}
+The proof crucially uses the cleaned-up treatment of the residuals. In the earlier draft, division
+by zero and the status of unattested strings made the soundness argument unstable. Once the
+domain is restricted to observed fragments and the residual clauses quantify only over positive
+denominators, the argument becomes straightforward.
+\end{remark}
+
+\chapter{Future Work}
+
+\section{Completeness for the probabilistic semantics}
+The most immediate next step is a completeness theorem, or a proof that completeness fails for
+this semantics. Either result would be valuable. A completeness proof would show that the
+semantics captures exactly the inferential content of the associative Lambek calculus. A failure
+of completeness would be equally informative, because it would identify the precise point at
+which corpus-relative probabilistic information departs from the classical residuated behaviour.
+
+The main obstacles are already visible. The semantics is finite, numerical, and tied to attested
+fragments. Standard canonical constructions for classical Lambek models do not immediately
+produce such corpus-relative valuations. Moreover, the use of maxima and minima in the
+semantic clauses suggests that any completeness proof may need to build a model whose
+numerical values are carefully engineered rather than merely order-theoretic.
+
+\section{Extending the formal model}
+Several extensions would make the semantics more realistic.
+\begin{enumerate}[label=(\roman*)]
+    \item \textbf{Out-of-vocabulary handling.} A smoothing method should assign principled values to
+    unseen words or fragments.
+    \item \textbf{Learning lexical probabilities.} Instead of assuming $\Lex$, one should estimate it from
+    annotated or weakly supervised corpora.
+    \item \textbf{Beyond observed fragments.} The present semantics could be extended from
+    $\Frag(\mathcal C)$ to all of $\Sigma^+$, perhaps with backoff or compositional generalisation.
+    \item \textbf{Normalisation over derivations.} A fuller probabilistic semantics could attach
+    probabilities directly to derivation trees, not only to string--type pairs.
+\end{enumerate}
+
+\section{Implementation}
+A concrete implementation would be a natural and worthwhile continuation of the thesis.
+One plausible route is a chart parser or dynamic-programming parser for the associative Lambek
+calculus with weighted lexical entries. The product clause already suggests a bottom-up dynamic
+program: for each substring, compute the best score for each complex type by maximising over
+binary splits. Residual values could then be computed from attested contexts or approximated by
+statistics gathered during training.
+
+A practical implementation project could proceed in four stages.
+\begin{enumerate}[label=(\arabic*)]
+    \item Build a lexicon of atomic type probabilities from an annotated corpus.
+    \item Implement a weighted Lambek chart parser over substrings.
+    \item Compare the parser's ambiguity-resolution behaviour with PCFG and probabilistic CCG
+    baselines.
+    \item Investigate whether the semantic values provide useful ranking information for downstream
+    semantic interpretation.
+\end{enumerate}
+
+Such an implementation would also help test whether the present semantics is best interpreted as
+(a) a genuine probabilistic semantics, (b) a scoring semantics for parse ranking, or (c) the first
+step toward a fuller statistical Lambek model.
+
+\section{Final remarks}
+This thesis has aimed to do one thing carefully rather than many things incompletely: to turn a
+promising but technically unstable sketch into a coherent formal proposal. The result is a
+corpus-based probabilistic semantics for the associative Lambek calculus together with a
+soundness theorem. That already provides a viable foundation for a larger research programme.
+The next stage is clear: completeness, implementation, and empirical evaluation.
+
+\printbibliography
+
+\end{document}
