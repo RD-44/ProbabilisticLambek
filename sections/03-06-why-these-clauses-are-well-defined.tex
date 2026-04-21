@@ -1,0 +1,31 @@
+\section{Why these clauses are well-defined}
+The original draft raised two technical problems: division by zero in the residual definitions and
+the treatment of words not present in the corpus. The present formalisation resolves both.
+
+First, division by zero is avoided by restricting the residual minima to witnesses with positive
+denominator, i.e. to contexts $y$ such that $v(y,A)>0$. If no such witness exists, the set in the
+minimum collapses to $\{1\}$ and the value becomes $1$. This is a natural default: in the absence
+of any positively supported counterevidence, the residual connective is not forced below $1$.
+The inner truncation $\min(1,\_)$ ensures that the value stays in the interval $[0,1]$.
+
+Second, out-of-vocabulary words are excluded from the domain entirely. The semantics is not a
+universal language model over all possible strings; it is a finite, corpus-relative semantics for
+observed fragments. This is consistent with the stated goal of the thesis, namely to parse strings
+of words drawn from the corpus vocabulary.
+
+\begin{remark}[Subtleties not captured by the present formalisation]
+The following issues are intentionally left outside the formal model.
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Learning from raw corpora.} The formalisation assumes lexical probabilities are
+    already given, whereas a practical system would need to infer them.
+    \item \textbf{Out-of-vocabulary generalisation.} Smoothing, backoff, or subword modelling would be
+    needed for real applications.
+    \item \textbf{Global normalisation.} The values $v(x,A)$ behave as probabilities locally, but the model is
+    not presented here as a full generative probability distribution over derivation trees.
+    \item \textbf{Unseen but grammatical strings.} By working over $\Frag(\mathcal C)$, the semantics is tied to
+    attested fragments rather than all strings over $\Sigma$.
+\end{enumerate}
+These restrictions should be read as part of the thesis scope, not as permanent limitations on
+future versions of the model.
+\end{remark}
+

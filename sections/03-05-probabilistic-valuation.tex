@@ -1,0 +1,55 @@
+\section{Probabilistic valuation}
+We now define a valuation
+\[
+v : \Frag(\mathcal C) \times \mathrm{Fm}(\LC) \to [0,1].
+\]
+The definition proceeds by recursion on formula complexity.
+
+\begin{definition}[Atomic clauses]
+For $x \in \Frag(\mathcal C)$ and $p \in \At$, define
+\[
+v(x,p) =
+\begin{cases}
+\Lex(x,p) & \text{if $x$ is a single word in $\Sigma$,}\\
+0 & \text{if $x$ has length greater than $1$.}
+\end{cases}
+\]
+\end{definition}
+
+The second clause is a modelling choice: atomic categories are taken to be lexical categories of
+single words. One could allow atomic categories for longer fragments as well, but that would
+require extra data and is unnecessary for the present soundness result.
+
+\begin{definition}[Product]
+For $x \in \Frag(\mathcal C)$,
+\[
+v(x,A\concat B)
+= \max\{v(y,A)\,v(z,B) \mid y,z \in \Frag(\mathcal C),\ yz=x\},
+\]
+with the convention that the maximum of the empty set is $0$.
+\end{definition}
+
+This says that the probability of $x$ having composite type $A\concat B$ is the best score among
+all observed binary decompositions of $x$ into a left part of type $A$ and a right part of type
+$B$.
+
+\begin{definition}[Left residual]
+For $x \in \Frag(\mathcal C)$,
+\[
+v(x,A\backslash B)
+= \min\Bigl(\{1\} \cup
+\Bigl\{\min\bigl(1,\frac{v(w,B)}{v(y,A)}\bigr)
+\ \Bigm|\ y \in \Frag(\mathcal C),\ yx=w \in \Frag(\mathcal C),\ v(y,A)>0\Bigr\}\Bigr).
+\]
+\end{definition}
+
+\begin{definition}[Right residual]
+For $x \in \Frag(\mathcal C)$,
+\[
+v(x,B/A)
+= \min\Bigl(\{1\} \cup
+\Bigl\{\min\bigl(1,\frac{v(w,B)}{v(y,A)}\bigr)
+\ \Bigm|\ y \in \Frag(\mathcal C),\ xy=w \in \Frag(\mathcal C),\ v(y,A)>0\Bigr\}\Bigr).
+\]
+\end{definition}
+

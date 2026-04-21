@@ -1,0 +1,13 @@
+\section{Extending the formal model}
+Several extensions would make the semantics more realistic.
+\begin{enumerate}[label=(\roman*)]
+    \item \textbf{Out-of-vocabulary handling.} A smoothing method should assign principled values to
+    unseen words or fragments.
+    \item \textbf{Learning lexical probabilities.} Instead of assuming $\Lex$, one should estimate it from
+    annotated or weakly supervised corpora.
+    \item \textbf{Beyond observed fragments.} The present semantics could be extended from
+    $\Frag(\mathcal C)$ to all of $\Sigma^+$, perhaps with backoff or compositional generalisation.
+    \item \textbf{Normalisation over derivations.} A fuller probabilistic semantics could attach
+    probabilities directly to derivation trees, not only to string--type pairs.
+\end{enumerate}
+

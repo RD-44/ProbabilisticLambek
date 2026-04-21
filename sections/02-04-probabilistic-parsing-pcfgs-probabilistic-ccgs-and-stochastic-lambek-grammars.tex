@@ -1,0 +1,16 @@
+\section{Probabilistic parsing: PCFGs, probabilistic CCGs, and stochastic Lambek grammars}
+The most direct computational motivation for this thesis comes from probabilistic parsing.
+Probabilistic context-free grammars are the standard starting point for ranking parses in the
+presence of ambiguity \citep{ManningSchutze1999}. They are attractive because they combine a
+clear formal semantics with trainable numerical parameters.
+
+Probabilistic CCG takes similar ideas into a more lexicalised grammar formalism.
+\citet{ClarkCurran2007} developed a wide-coverage statistical CCG parser using log-linear models,
+showing that categorial methods can be scaled successfully when combined with probabilistic
+ranking. For the Lambek setting more directly, \citet{BonfanteDeGroote2004} proposed a
+stochastic point of view on Lambek categorial grammars, motivated precisely by the fact that
+parsing in the Lambek calculus is inherently non-deterministic.
+
+These works suggest that a probabilistic Lambek semantics is not an isolated curiosity. It sits at
+a natural intersection of logical grammar and statistical parsing.
+

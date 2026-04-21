@@ -1,0 +1,15 @@
+\section{Corpus fragments and vocabulary}
+Let $\mathcal C$ be a finite corpus of sentences over a finite vocabulary $\Sigma$. We denote $\Sigma^+$ to be the set of finite non-empty strings from vocabulary $\Sigma$. In order to keep the
+semantics finite and directly tied to parsing data, let $\Frag(\mathcal C)$ be the set of all non-empty
+contiguous strings that occur in at least one sentence in $\mathcal C$. Thus:
+\[
+\Frag(\mathcal C) \subseteq \Sigma^+.
+\]
+Because $\mathcal C$ is finite, the set $\Frag(\mathcal C)$ is finite as well.
+
+The choice of $\Frag(\mathcal C)$ rather than all of $\Sigma^+$ is deliberate. It reflects the fact that
+this semantics is trained and evaluated relative to observed data. It also ensures that the minima
+and maxima appearing in the recursive clauses below are taken over finite sets. Extending the
+semantics to arbitrary strings over $\Sigma$ would require a separate treatment of unseen data,
+which is left to future work.
+
