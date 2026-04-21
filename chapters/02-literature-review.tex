@@ -1,0 +1,92 @@
+\chapter{Literature Review}
+
+\section{Classical Lambek calculus and completeness}
+The classical literature provides an important baseline for this thesis. The original system of
+\citet{Lambek1958} and \citet{Lambek1961} was quickly recognised as more than a linguistic
+notation: it is a mathematically robust substructural logic with a rich proof theory and model
+theory. Surveys and handbook treatments such as \citet{vanBenthem1988} and
+\citet{Moortgat1997} show how the calculus sits within the wider landscape of categorial and
+type-logical grammar.
+
+For the specific question of completeness, the paper by \citet{Dosen1985} is especially relevant
+because it directly establishes a completeness theorem for the Lambek calculus of syntactic
+categories. Equally important is the relational-semantics perspective of
+\citet{AndrekaMikulas1994}, who showed that relational models yield strong completeness results
+for suitable versions of the calculus. From a language-theoretic viewpoint, \citet{Pentus1995}
+proved completeness with respect to language models, while \citet{Pentus1993} and
+\citet{Pentus1997} clarified the relation between Lambek grammars and context-free grammars.
+
+These results matter for the present thesis in two ways. First, they demonstrate that
+completeness questions for Lambek systems are deep but tractable. Second, they show that
+there are already several mathematically natural semantic classes for which completeness holds.
+This makes it reasonable to ask whether a similar story can be told for a probabilistic,
+corpus-based semantics.
+
+
+\section{Substructural logic and algebraic background}
+The Lambek calculus belongs to the broader family of substructural logics, where structural
+rules are controlled rather than assumed. This family includes relevance logics, linear logics, and
+other resource-sensitive systems. Standard algebraic treatments organise these systems around
+residuated structures, in which multiplication and division are linked by residuation principles
+\citep{GalatosJipsenKowalskiOno2007,DosenSchroederHeister1993}.
+
+This background is helpful because the semantics proposed in this thesis is explicitly designed to
+mirror residuation: the multiplication clause aggregates compatible decompositions of a string,
+while the two division clauses are defined by corpus-relative ratios. The result is not a standard
+residuated algebra, but it is clearly inspired by the same adjoint pattern.
+
+
+\section{Lambek calculus in linguistics and computational semantics}
+Within linguistics, Lambek-style systems are valued because they combine lexical sensitivity,
+word order, and compositionality in a transparent way. Textbook and monograph treatments
+such as \citet{Morrill1994} and \citet{Moortgat1997} develop the linguistic applications in detail.
+Steedman's work on CCG shows how categorial methods support wide-coverage syntactic and
+semantic analysis \citep{Steedman2000}.
+
+A further line of work connects categorial grammar to compositional models of meaning. While
+this thesis is not primarily about vector semantics, the compositional viewpoint remains relevant:
+if syntactic derivations guide semantic composition, then a probabilistic ranking over derivations
+can also be interpreted as a ranking over candidate semantic analyses. For broader motivation on
+composition-driven semantics, see \citet{CoeckeSadrzadehClark2010}.
+
+
+\section{Probabilistic parsing: PCFGs, probabilistic CCGs, and stochastic Lambek grammars}
+The most direct computational motivation for this thesis comes from probabilistic parsing.
+Probabilistic context-free grammars are the standard starting point for ranking parses in the
+presence of ambiguity \citep{ManningSchutze1999}. They are attractive because they combine a
+clear formal semantics with trainable numerical parameters.
+
+Probabilistic CCG takes similar ideas into a more lexicalised grammar formalism.
+\citet{ClarkCurran2007} developed a wide-coverage statistical CCG parser using log-linear models,
+showing that categorial methods can be scaled successfully when combined with probabilistic
+ranking. For the Lambek setting more directly, \citet{BonfanteDeGroote2004} proposed a
+stochastic point of view on Lambek categorial grammars, motivated precisely by the fact that
+parsing in the Lambek calculus is inherently non-deterministic.
+
+These works suggest that a probabilistic Lambek semantics is not an isolated curiosity. It sits at
+a natural intersection of logical grammar and statistical parsing.
+
+
+\section{Recent model-theoretic developments}
+Recent work by Stepan Kuznetsov and collaborators shows that semantics and completeness for
+Lambek-style systems remain active research topics. Of particular relevance is
+\citet{Kuznetsov2023}, which revisits relational semantics for extensions of the Lambek calculus
+and carefully distinguishes weak from strong completeness. Likewise,
+\citet{KanovichKuznetsovScedrov2022} studies language models for extensions of the Lambek
+calculus and highlights how adding connectives or constants can significantly affect completeness
+behaviour.
+
+For this thesis, the lesson is methodological: completeness is subtle even in well-studied,
+non-probabilistic extensions. That makes it plausible that the completeness problem for a
+corpus-relative probabilistic semantics will require new ideas rather than a straightforward
+adaptation of existing proofs.
+
+
+\section{Position of the present thesis}
+The literature therefore leaves a clear space for the present project. On one side we have a
+well-developed proof theory and completeness theory for classical Lambek calculi. On the other
+side we have successful probabilistic grammar formalisms, together with some directly related
+stochastic Lambek work. What is still missing is a careful, thesis-length account of a
+corpus-based probabilistic semantics that is explicit about its formal choices, honest about its
+limitations, and rigorous at least on soundness. That is the niche this thesis aims to fill.
+
