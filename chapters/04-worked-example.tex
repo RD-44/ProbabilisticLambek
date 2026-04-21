@@ -1,0 +1,223 @@
+\chapter{Worked Example: Ambiguity in a Small Corpus}
+
+\newcommand{\ExNP}{\mathsf{np}}
+\newcommand{\ExN}{\mathsf{n}}
+\newcommand{\ExIV}{\mathsf{iv}}
+\newcommand{\ExTV}{\mathsf{tv}}
+\newcommand{\ExOrig}{\mathsf{orig}}
+\newcommand{\ExPers}{\mathsf{pers}}
+\newcommand{\ExBev}{\mathsf{bev}}
+\newcommand{\ExPerson}{\mathsf{person}}
+\newcommand{\ExStr}{\mathsf{str}}
+
+\section{Purpose of the example}
+The definitions in the previous chapter are deliberately abstract. This chapter gives a small
+worked example showing how the valuation behaves on an observed corpus, how product types
+combine local evidence, and how residual types can be read as corpus-relative expectations for
+missing material.
+
+The example is inspired by the simple categorial-grammar exercises used throughout the
+background material: nouns and noun phrases such as \emph{cats} and \emph{mice}, intransitive and
+transitive verbs such as \emph{nap} and \emph{chase}, adjective modification as in \emph{cute cats},
+and the classic ambiguity of the phrase \emph{French wine drinker}. The point is not to build a
+real parser, but to make the semantics concrete enough that its probabilistic behaviour can be
+seen in a few calculations.
+
+\section{A toy corpus}
+Let the corpus $\mathcal C_{\mathrm{ex}}$ consist of the following observed strings:
+\[
+\begin{array}{ll}
+u_1 &= \text{cats chase mice},\\
+u_2 &= \text{cute cats nap},\\
+u_3 &= \text{French wine drinker},\\
+u_4 &= \text{French chef drinks wine},\\
+u_5 &= \text{young wine drinker drinks}.
+\end{array}
+\]
+The domain $\Frag(\mathcal C_{\mathrm{ex}})$ is the set of all non-empty contiguous fragments of
+these strings. For instance, it contains \emph{cats chase}, \emph{chase mice}, \emph{French wine},
+\emph{wine drinker}, and \emph{French wine drinker}. It does not contain arbitrary strings over the
+same vocabulary, such as \emph{mice chase cats}, unless those strings are added to the corpus.
+
+For the example, take the following atomic types:
+\[
+\ExNP,\ \ExN,\ \ExIV,\ \ExTV,\ \ExOrig,\ \ExPers,\ \ExBev,\ \ExPerson.
+\]
+Here $\ExOrig$ is an adjective-like atomic role for origin or provenance, as in \emph{French wine};
+$\ExPers$ is an adjective-like role for nationality or person-description, as in \emph{French chef};
+$\ExBev$ is a beverage-like nominal role; and $\ExPerson$ is a person-like nominal role. These are
+not meant as universal syntactic categories. They are just the atomic features exposed to the
+toy valuation.
+
+\section{Lexical probabilities}
+Assume the following lexical probabilities. Entries not shown have value $0$.
+\[
+\begin{array}{c|c|c}
+\text{word} & \text{atomic type} & \Lex(w,p)\\
+\hline
+\text{cats} & \ExNP & 0.55\\
+\text{cats} & \ExN & 0.45\\
+\text{mice} & \ExNP & 0.60\\
+\text{mice} & \ExN & 0.40\\
+\text{chase} & \ExTV & 0.95\\
+\text{nap} & \ExIV & 0.90\\
+\text{cute} & \ExOrig & 0.10\\
+\text{cute} & \ExPers & 0.90\\
+\text{French} & \ExOrig & 0.55\\
+\text{French} & \ExPers & 0.45\\
+\text{wine} & \ExBev & 0.75\\
+\text{wine} & \ExN & 0.25\\
+\text{drinker} & \ExPerson & 0.85\\
+\text{drinker} & \ExN & 0.15\\
+\text{chef} & \ExPerson & 0.90\\
+\text{drinks} & \ExTV & 0.60\\
+\text{drinks} & \ExIV & 0.40
+\end{array}
+\]
+These numbers should be read as smoothed corpus-relative lexical confidences. For example,
+\emph{French} receives support both as an origin modifier and as a person/nationality modifier,
+because the corpus contains both \emph{French wine} and \emph{French chef}. This is exactly the
+kind of local ambiguity that a probabilistic semantics should preserve rather than erase.
+
+\section{Product values}
+First consider a simple intransitive fragment. Let
+\[
+S_{\mathrm{iv}} = \ExNP \concat \ExIV.
+\]
+Then
+\[
+\begin{aligned}
+v(\text{cats nap},S_{\mathrm{iv}})
+&= \max\{v(y,\ExNP)v(z,\ExIV)\mid yz=\text{cats nap}\}\\
+&= v(\text{cats},\ExNP)v(\text{nap},\ExIV)\\
+&= 0.55 \cdot 0.90\\
+&= 0.495.
+\end{aligned}
+\]
+The only observed non-empty split of \emph{cats nap} into two fragments is
+\emph{cats} followed by \emph{nap}, so the maximum has a single relevant candidate.
+
+For the transitive sentence \emph{cats chase mice}, use the product skeleton
+\[
+S_{\mathrm{tr}} = \ExNP \concat \ExTV \concat \ExNP.
+\]
+By associativity of the product valuation,
+\[
+\begin{aligned}
+v(\text{cats chase mice},S_{\mathrm{tr}})
+&= v(\text{cats},\ExNP)v(\text{chase},\ExTV)v(\text{mice},\ExNP)\\
+&= 0.55 \cdot 0.95 \cdot 0.60\\
+&= 0.3135.
+\end{aligned}
+\]
+This is a deliberately exposed product skeleton. In a more idiomatic Lambek grammar one would
+hide part of this structure inside a residual type such as $(\ExNP\backslash \mathsf{s})/\ExNP$.
+The next section shows how the residual calculation recovers that same ``expects an argument''
+intuition from the corpus.
+
+\section{Residual values as expectations}
+Consider the fragment \emph{cats chase}. In the corpus it occurs as a prefix of
+\emph{cats chase mice}. The right residual $S_{\mathrm{tr}}/\ExNP$ measures how strongly this
+prefix behaves like something that becomes a transitive sentence when followed by an
+$\ExNP$-fragment.
+
+The only relevant positive right context in this corpus is $y=\text{mice}$, so
+\[
+\begin{aligned}
+v(\text{cats chase},S_{\mathrm{tr}}/\ExNP)
+&= \min\Bigl(1,\frac{v(\text{cats chase mice},S_{\mathrm{tr}})}
+{v(\text{mice},\ExNP)}\Bigr)\\
+&= \min\Bigl(1,\frac{0.3135}{0.60}\Bigr)\\
+&= 0.5225.
+\end{aligned}
+\]
+But this is exactly the product support for the prefix itself:
+\[
+v(\text{cats chase},\ExNP\concat \ExTV)
+= 0.55\cdot 0.95
+=0.5225.
+\]
+Thus the residual value has a natural operational reading: \emph{cats chase} is supported as a
+right-looking incomplete sentence to precisely the extent that the corpus supports the observed
+subject--verb prefix.
+
+There is a symmetric calculation for the suffix \emph{chase mice}. The left residual
+$\ExNP\backslash S_{\mathrm{tr}}$ measures how strongly the suffix behaves like something that
+becomes a transitive sentence when preceded by an $\ExNP$-fragment:
+\[
+\begin{aligned}
+v(\text{chase mice},\ExNP\backslash S_{\mathrm{tr}})
+&= \min\Bigl(1,\frac{v(\text{cats chase mice},S_{\mathrm{tr}})}
+{v(\text{cats},\ExNP)}\Bigr)\\
+&= \min\Bigl(1,\frac{0.3135}{0.55}\Bigr)\\
+&= 0.57.
+\end{aligned}
+\]
+Again this agrees with the direct product value
+\[
+v(\text{chase mice},\ExTV\concat\ExNP)
+=0.95\cdot0.60
+=0.57.
+\]
+
+\section{Ambiguity in \emph{French wine drinker}}
+Now consider the phrase \emph{French wine drinker}. It has two familiar readings.
+\begin{enumerate}[label=(\roman*)]
+    \item A drinker of French wine.
+    \item A French person who is a wine drinker.
+\end{enumerate}
+In the toy semantics these readings correspond to different formulae, because \emph{French}
+can contribute either $\ExOrig$ or $\ExPers$.
+
+For the first reading, use
+\[
+R_{\mathrm{wine}} = (\ExOrig\concat\ExBev)\concat\ExPerson.
+\]
+Then
+\[
+\begin{aligned}
+v(\text{French wine drinker},R_{\mathrm{wine}})
+&= v(\text{French wine},\ExOrig\concat\ExBev)
+   v(\text{drinker},\ExPerson)\\
+&= v(\text{French},\ExOrig)v(\text{wine},\ExBev)v(\text{drinker},\ExPerson)\\
+&= 0.55\cdot0.75\cdot0.85\\
+&= 0.350625.
+\end{aligned}
+\]
+For the second reading, use
+\[
+R_{\mathrm{person}} = \ExPers\concat(\ExBev\concat\ExPerson).
+\]
+Then
+\[
+\begin{aligned}
+v(\text{French wine drinker},R_{\mathrm{person}})
+&= v(\text{French},\ExPers)
+   v(\text{wine drinker},\ExBev\concat\ExPerson)\\
+&= v(\text{French},\ExPers)v(\text{wine},\ExBev)v(\text{drinker},\ExPerson)\\
+&= 0.45\cdot0.75\cdot0.85\\
+&= 0.286875.
+\end{aligned}
+\]
+Both analyses are available, but they are not equally supported. In this toy corpus the first
+reading is preferred because \emph{French} has slightly stronger support as an origin modifier than
+as a person modifier. A different corpus could reverse the inequality. For example, a corpus
+containing many fragments such as \emph{French chef}, \emph{French artist}, and \emph{French
+drinker}, but few origin uses such as \emph{French wine}, would increase
+$\Lex(\text{French},\ExPers)$ and decrease $\Lex(\text{French},\ExOrig)$.
+
+\section{What the example shows}
+This small calculation illustrates three features of the semantics.
+\begin{enumerate}[label=(\roman*)]
+    \item The semantics is genuinely corpus-relative: only fragments observed in
+    $\mathcal C_{\mathrm{ex}}$ participate in the maxima and minima.
+    \item Product types combine local lexical support and preserve word order. The score for
+    \emph{cats chase mice} is not the same calculation as a hypothetical \emph{mice chase cats}
+    unless that string is also observed.
+    \item Ambiguity is represented numerically rather than eliminated. The two readings of
+    \emph{French wine drinker} correspond to two different formulae with two different values.
+\end{enumerate}
+
+The example is intentionally small, but it captures the intended role of the semantics. A parser
+could generate several candidate Lambek formulae for the same observed string; the valuation
+then supplies a corpus-relative ranking over those candidates.
