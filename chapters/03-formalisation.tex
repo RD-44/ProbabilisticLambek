@@ -8,8 +8,8 @@ only a recogniser of grammaticality but a \emph{ranker} of candidate analyses.
 
 The formalisation in this thesis deliberately simplifies several practical issues.
 \begin{itemize}
-    \item It assumes that lexical type probabilities are already available, either from manual
-    annotation or from a prior learning stage.
+    \item It assumes that lexical probabilities over Lambek formulae are already available, either
+    from manual annotation or from a prior learning stage.
     \item It does not handle words outside the corpus vocabulary.
     \item It treats probabilities as corpus-relative confidence values rather than as a fully learned
     generative model.
@@ -60,21 +60,34 @@ which is left to future work.
 
 
 \section{Lexical probabilities}
-We assume a lexical probability assignment
+We assume a lexical probability assignment over arbitrary Lambek formulae:
 \[
-\Lex : \Sigma \times \At \to [0,1]
+\Lex : \Sigma \times \mathrm{Fm}(\LC) \to [0,1].
 \]
-such that for every word $w \in \Sigma$,
+For every word $w \in \Sigma$,
 \[
-\sum_{p \in \At} \Lex(w,p) = 1,
+\sum_{A \in \mathrm{Fm}(\LC)} \Lex(w,A) = 1,
 \]
-where all but finitely many summands are zero. Intuitively, $\Lex(w,p)$ is the probability that
-the word $w$ is assigned the atomic type $p$.
+where all but finitely many summands are zero. Intuitively, $\Lex(w,A)$ is the probability that
+the word $w$ is assigned the Lambek type $A$. The finite-support condition is essential: even
+though $\mathrm{Fm}(\LC)$ is infinite, each word has only finitely many lexical entries with
+positive probability.
+
+This formulation allows ordinary categorial lexical entries. For example, a conjunction may be
+assigned
+\[
+\Lex(\text{and},(\mathsf{s}\backslash \mathsf{s})/\mathsf{s})>0,
+\]
+and a transitive verb may be assigned
+\[
+\Lex(\text{chase},(\mathsf{np}\backslash \mathsf{s})/\mathsf{np})>0.
+\]
+In the second formula, the verb first combines with an object noun phrase on its right and then
+with a subject noun phrase on its left.
 
 \begin{remark}
-If a word $w \in \Sigma$ occurs in the corpus but is never assigned an atomic type $p$, then
-$\Lex(w,p)=0$. This matches the intuition from the draft: lack of attestation for a type within
-the observed vocabulary should count against that type.
+If a word $w \in \Sigma$ occurs in the corpus but is never assigned a formula $A$, then
+$\Lex(w,A)=0$. This applies equally to atomic and non-atomic formulae.
 \end{remark}
 
 \begin{remark}
@@ -85,12 +98,52 @@ formal system clean and makes explicit that out-of-vocabulary handling is a futu
 \end{remark}
 
 
+\section{Lexical analyses and parse scores}
+The lexical probability assignment is used directly to score candidate parses. Let
+$x=w_1\cdots w_n \in \Frag(\mathcal C)$ be an observed fragment. A \emph{lexical analysis} of
+$x$ is a sequence of formulae $A_1,\ldots,A_n$ such that $\Lex(w_i,A_i)>0$ for each $i$.
+The lexical score of this analysis is
+\[
+\prod_{i=1}^n \Lex(w_i,A_i).
+\]
+
+The analysis licenses a target formula $B$ when
+\[
+A_1\concat \cdots \concat A_n \vdash_{\LC} B.
+\]
+We therefore define the parse score
+\[
+P_{\Lex}(x,B)
+= \max\Bigl\{
+\prod_{i=1}^n \Lex(w_i,A_i)
+\ \Bigm|\
+x=w_1\cdots w_n,\ 
+A_1\concat\cdots\concat A_n \vdash_{\LC} B
+\Bigr\},
+\]
+with the convention that the maximum of the empty set is $0$.
+
+For a single word this gives direct support to non-atomic lexical types. For example,
+\[
+P_{\Lex}(\text{and},(\mathsf{s}\backslash \mathsf{s})/\mathsf{s})
+\geq \Lex(\text{and},(\mathsf{s}\backslash \mathsf{s})/\mathsf{s}).
+\]
+Thus the fact that \emph{and} has a complex type is a lexical fact, not something that has to be
+recovered by evaluating the residual clauses below.
+
+
 \section{Probabilistic valuation}
-We now define a valuation
+In addition to lexical parse scores, we define a corpus-relative semantic valuation
 \[
 v : \Frag(\mathcal C) \times \mathrm{Fm}(\LC) \to [0,1].
 \]
-The definition proceeds by recursion on formula complexity.
+This valuation is used for semantic consequence and the soundness theorem. It should not be
+identified with $P_{\Lex}$. In particular, $\Lex(w,A)$ records that a word has type $A$ in the
+lexicon, while $v(x,A)$ records the extent to which a corpus fragment behaves like an
+instance of $A$ under the recursive semantic clauses. Keeping these two notions separate avoids
+making complex lexical entries additional base cases for the residual operations.
+
+The definition of $v$ proceeds by recursion on formula complexity.
 
 \begin{definition}[Atomic clauses]
 For $x \in \Frag(\mathcal C)$ and $p \in \At$, define
@@ -103,9 +156,11 @@ v(x,p) =
 \]
 \end{definition}
 
-The second clause is a modelling choice: atomic categories are taken to be lexical categories of
-single words. One could allow atomic categories for longer fragments as well, but that would
-require extra data and is unnecessary for the present soundness result.
+Only atomic lexical probabilities seed the recursive valuation $v$. Non-atomic lexical entries
+remain available through $P_{\Lex}$, but $v(x,A\backslash B)$ and $v(x,B/A)$ are still evaluated
+by the residual clauses below. Thus $v(\text{and},(\mathsf{s}\backslash \mathsf{s})/\mathsf{s})$
+would measure contextual support for \emph{and} as a residual expression, whereas
+$\Lex(\text{and},(\mathsf{s}\backslash \mathsf{s})/\mathsf{s})$ is the direct lexical assignment.
 
 \begin{definition}[Product]
 For $x \in \Frag(\mathcal C)$,
@@ -156,6 +211,10 @@ universal language model over all possible strings; it is a finite, corpus-relat
 observed fragments. This is consistent with the stated goal of the thesis, namely to parse strings
 of words drawn from the corpus vocabulary.
 
+Third, non-atomic lexical entries do not create circularity in the recursive definition of $v$.
+They are handled by $\Lex$ and $P_{\Lex}$, while $v$ remains the semantic valuation used to
+interpret formulae compositionally.
+
 \begin{remark}[Subtleties not captured by the present formalisation]
 The following issues are intentionally left outside the formal model.
 \begin{enumerate}[label=(\alph*)]
@@ -185,5 +244,6 @@ v(x,A) \leq v(x,B) \text{ for all } x \in \Frag(\mathcal C).
 
 Thus $A \Sem B$ means that every observed fragment is at least as probable as a realisation of
 $B$ as it is as a realisation of $A$. This is the semantic preorder with respect to which soundness
-will be proved.
-
+will be proved. Lexical parse scores and semantic consequence are linked by the proof theory:
+if a lexical analysis has product type $A$ and $A \vdash_{\LC} B$, then soundness guarantees
+that the passage from $A$ to $B$ is valid under this semantic preorder.

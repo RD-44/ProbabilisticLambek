@@ -1,223 +1,231 @@
-\chapter{Worked Example: Ambiguity in a Small Corpus}
+\chapter{Worked Example: Lexical Ambiguity with Complex Types}
 
 \newcommand{\ExNP}{\mathsf{np}}
 \newcommand{\ExN}{\mathsf{n}}
-\newcommand{\ExIV}{\mathsf{iv}}
-\newcommand{\ExTV}{\mathsf{tv}}
-\newcommand{\ExOrig}{\mathsf{orig}}
-\newcommand{\ExPers}{\mathsf{pers}}
-\newcommand{\ExBev}{\mathsf{bev}}
-\newcommand{\ExPerson}{\mathsf{person}}
-\newcommand{\ExStr}{\mathsf{str}}
+\newcommand{\ExS}{\mathsf{s}}
+\newcommand{\Parse}{P_{\Lex}}
 
 \section{Purpose of the example}
-The definitions in the previous chapter are deliberately abstract. This chapter gives a small
-worked example showing how the valuation behaves on an observed corpus, how product types
-combine local evidence, and how residual types can be read as corpus-relative expectations for
-missing material.
-
-The example is inspired by the simple categorial-grammar exercises used throughout the
-background material: nouns and noun phrases such as \emph{cats} and \emph{mice}, intransitive and
-transitive verbs such as \emph{nap} and \emph{chase}, adjective modification as in \emph{cute cats},
-and the classic ambiguity of the phrase \emph{French wine drinker}. The point is not to build a
-real parser, but to make the semantics concrete enough that its probabilistic behaviour can be
-seen in a few calculations.
+The revised formalisation lets single words receive arbitrary Lambek formulae as lexical types.
+This makes the examples much cleaner. Instead of introducing special atomic types for
+intransitive verbs, transitive verbs, modifiers, or conjunctions, we use a small atomic inventory:
+\[
+\At_{\mathrm{ex}}=\{\ExNP,\ExN,\ExS\}.
+\]
+The familiar linguistic roles are then represented by complex formulae. For example,
+\[
+(\ExNP\backslash \ExS)/\ExNP
+\]
+is the type of a transitive verb, and
+\[
+(\ExS\backslash \ExS)/\ExS
+\]
+is a simple type for sentential conjunction.
 
 \section{A toy corpus}
-Let the corpus $\mathcal C_{\mathrm{ex}}$ consist of the following observed strings:
+Let $\mathcal C_{\mathrm{ex}}$ consist of the following observed strings:
 \[
 \begin{array}{ll}
-u_1 &= \text{cats chase mice},\\
-u_2 &= \text{cute cats nap},\\
-u_3 &= \text{French wine drinker},\\
-u_4 &= \text{French chef drinks wine},\\
-u_5 &= \text{young wine drinker drinks}.
+u_1 &= \text{cats nap},\\
+u_2 &= \text{mice nap},\\
+u_3 &= \text{cats chase mice},\\
+u_4 &= \text{cats nap and mice nap},\\
+u_5 &= \text{French wine drinker}.
 \end{array}
 \]
-The domain $\Frag(\mathcal C_{\mathrm{ex}})$ is the set of all non-empty contiguous fragments of
-these strings. For instance, it contains \emph{cats chase}, \emph{chase mice}, \emph{French wine},
-\emph{wine drinker}, and \emph{French wine drinker}. It does not contain arbitrary strings over the
-same vocabulary, such as \emph{mice chase cats}, unless those strings are added to the corpus.
-
-For the example, take the following atomic types:
-\[
-\ExNP,\ \ExN,\ \ExIV,\ \ExTV,\ \ExOrig,\ \ExPers,\ \ExBev,\ \ExPerson.
-\]
-Here $\ExOrig$ is an adjective-like atomic role for origin or provenance, as in \emph{French wine};
-$\ExPers$ is an adjective-like role for nationality or person-description, as in \emph{French chef};
-$\ExBev$ is a beverage-like nominal role; and $\ExPerson$ is a person-like nominal role. These are
-not meant as universal syntactic categories. They are just the atomic features exposed to the
-toy valuation.
+As before, $\Frag(\mathcal C_{\mathrm{ex}})$ contains the non-empty contiguous fragments of these
+strings, such as \emph{cats chase}, \emph{chase mice}, \emph{and mice nap}, and
+\emph{French wine drinker}.
 
 \section{Lexical probabilities}
-Assume the following lexical probabilities. Entries not shown have value $0$.
+Assume the following probabilistic lexicon. Entries not listed have probability $0$.
 \[
 \begin{array}{c|c|c}
-\text{word} & \text{atomic type} & \Lex(w,p)\\
+\text{word} & \text{formula} & \Lex(w,A)\\
 \hline
-\text{cats} & \ExNP & 0.55\\
-\text{cats} & \ExN & 0.45\\
-\text{mice} & \ExNP & 0.60\\
-\text{mice} & \ExN & 0.40\\
-\text{chase} & \ExTV & 0.95\\
-\text{nap} & \ExIV & 0.90\\
-\text{cute} & \ExOrig & 0.10\\
-\text{cute} & \ExPers & 0.90\\
-\text{French} & \ExOrig & 0.55\\
-\text{French} & \ExPers & 0.45\\
-\text{wine} & \ExBev & 0.75\\
-\text{wine} & \ExN & 0.25\\
-\text{drinker} & \ExPerson & 0.85\\
-\text{drinker} & \ExN & 0.15\\
-\text{chef} & \ExPerson & 0.90\\
-\text{drinks} & \ExTV & 0.60\\
-\text{drinks} & \ExIV & 0.40
+\text{cats} & \ExNP & 0.95\\
+\text{cats} & \ExN & 0.05\\
+\text{mice} & \ExNP & 0.95\\
+\text{mice} & \ExN & 0.05\\
+\text{nap} & \ExNP\backslash \ExS & 1\\
+\text{chase} & (\ExNP\backslash \ExS)/\ExNP & 1\\
+\text{and} & (\ExS\backslash \ExS)/\ExS & 1\\
+\text{French} & \ExN/\ExN & 0.45\\
+\text{French} & (\ExN/\ExN)/(\ExN/\ExN) & 0.55\\
+\text{wine} & \ExN/\ExN & 0.85\\
+\text{wine} & \ExN & 0.15\\
+\text{drinker} & \ExN & 1
 \end{array}
 \]
-These numbers should be read as smoothed corpus-relative lexical confidences. For example,
-\emph{French} receives support both as an origin modifier and as a person/nationality modifier,
-because the corpus contains both \emph{French wine} and \emph{French chef}. This is exactly the
-kind of local ambiguity that a probabilistic semantics should preserve rather than erase.
+This table illustrates the main point of the revised formalisation. Words such as \emph{chase},
+\emph{and}, \emph{French}, and \emph{wine} can be assigned non-atomic formulae directly. These
+entries are lexical assignments, not values that must be obtained by recursively evaluating the
+residual clauses.
 
-\section{Product values}
-First consider a simple intransitive fragment. Let
+\section{Simple sentence scores}
+Consider first \emph{cats nap}. The lexical analysis
 \[
-S_{\mathrm{iv}} = \ExNP \concat \ExIV.
+\text{cats}:\ExNP,
+\qquad
+\text{nap}:\ExNP\backslash \ExS
 \]
-Then
+has lexical score
 \[
-\begin{aligned}
-v(\text{cats nap},S_{\mathrm{iv}})
-&= \max\{v(y,\ExNP)v(z,\ExIV)\mid yz=\text{cats nap}\}\\
-&= v(\text{cats},\ExNP)v(\text{nap},\ExIV)\\
-&= 0.55 \cdot 0.90\\
-&= 0.495.
-\end{aligned}
+0.95\cdot 1 = 0.95.
 \]
-The only observed non-empty split of \emph{cats nap} into two fragments is
-\emph{cats} followed by \emph{nap}, so the maximum has a single relevant candidate.
+It licenses a sentence because
+\[
+\ExNP\concat(\ExNP\backslash \ExS)\vdash_{\LC}\ExS.
+\]
+Hence
+\[
+\Parse(\text{cats nap},\ExS)\geq 0.95.
+\]
+In this toy lexicon there is no higher-scoring sentence analysis for the same string, so the parse
+score is $0.95$.
 
-For the transitive sentence \emph{cats chase mice}, use the product skeleton
+For the transitive sentence \emph{cats chase mice}, the relevant lexical analysis is
 \[
-S_{\mathrm{tr}} = \ExNP \concat \ExTV \concat \ExNP.
+\text{cats}:\ExNP,
+\qquad
+\text{chase}:(\ExNP\backslash \ExS)/\ExNP,
+\qquad
+\text{mice}:\ExNP.
 \]
-By associativity of the product valuation,
+The Lambek reduction is the usual one:
 \[
-\begin{aligned}
-v(\text{cats chase mice},S_{\mathrm{tr}})
-&= v(\text{cats},\ExNP)v(\text{chase},\ExTV)v(\text{mice},\ExNP)\\
-&= 0.55 \cdot 0.95 \cdot 0.60\\
-&= 0.3135.
-\end{aligned}
+\ExNP
+\concat ((\ExNP\backslash \ExS)/\ExNP)
+\concat \ExNP
+\vdash_{\LC}
+\ExNP\concat(\ExNP\backslash \ExS)
+\vdash_{\LC}
+\ExS.
 \]
-This is a deliberately exposed product skeleton. In a more idiomatic Lambek grammar one would
-hide part of this structure inside a residual type such as $(\ExNP\backslash \mathsf{s})/\ExNP$.
-The next section shows how the residual calculation recovers that same ``expects an argument''
-intuition from the corpus.
+The score of this analysis is
+\[
+0.95\cdot1\cdot0.95=0.9025,
+\]
+so
+\[
+\Parse(\text{cats chase mice},\ExS)=0.9025.
+\]
 
-\section{Residual values as expectations}
-Consider the fragment \emph{cats chase}. In the corpus it occurs as a prefix of
-\emph{cats chase mice}. The right residual $S_{\mathrm{tr}}/\ExNP$ measures how strongly this
-prefix behaves like something that becomes a transitive sentence when followed by an
-$\ExNP$-fragment.
+\section{Conjunction}
+The word \emph{and} is assigned the complex formula
+\[
+(\ExS\backslash \ExS)/\ExS.
+\]
+For the string \emph{cats nap and mice nap}, the left substring \emph{cats nap} receives type
+$\ExS$, and the right substring \emph{mice nap} also receives type $\ExS$. Then
+\[
+((\ExS\backslash \ExS)/\ExS)\concat \ExS
+\vdash_{\LC}
+\ExS\backslash \ExS,
+\]
+and therefore
+\[
+\ExS\concat(\ExS\backslash \ExS)\vdash_{\LC}\ExS.
+\]
+The full lexical score is
+\[
+0.95\cdot1\cdot1\cdot0.95\cdot1=0.9025,
+\]
+so the coordinated sentence receives
+\[
+\Parse(\text{cats nap and mice nap},\ExS)=0.9025.
+\]
 
-The only relevant positive right context in this corpus is $y=\text{mice}$, so
+Notice what is \emph{not} happening here. We do not need to compute
 \[
-\begin{aligned}
-v(\text{cats chase},S_{\mathrm{tr}}/\ExNP)
-&= \min\Bigl(1,\frac{v(\text{cats chase mice},S_{\mathrm{tr}})}
-{v(\text{mice},\ExNP)}\Bigr)\\
-&= \min\Bigl(1,\frac{0.3135}{0.60}\Bigr)\\
-&= 0.5225.
-\end{aligned}
+v(\text{and},(\ExS\backslash \ExS)/\ExS)
 \]
-But this is exactly the product support for the prefix itself:
+from the recursive residual clause in order to say that \emph{and} has this type. The direct
+lexical statement is
 \[
-v(\text{cats chase},\ExNP\concat \ExTV)
-= 0.55\cdot 0.95
-=0.5225.
+\Lex(\text{and},(\ExS\backslash \ExS)/\ExS)=1.
 \]
-Thus the residual value has a natural operational reading: \emph{cats chase} is supported as a
-right-looking incomplete sentence to precisely the extent that the corpus supports the observed
-subject--verb prefix.
-
-There is a symmetric calculation for the suffix \emph{chase mice}. The left residual
-$\ExNP\backslash S_{\mathrm{tr}}$ measures how strongly the suffix behaves like something that
-becomes a transitive sentence when preceded by an $\ExNP$-fragment:
-\[
-\begin{aligned}
-v(\text{chase mice},\ExNP\backslash S_{\mathrm{tr}})
-&= \min\Bigl(1,\frac{v(\text{cats chase mice},S_{\mathrm{tr}})}
-{v(\text{cats},\ExNP)}\Bigr)\\
-&= \min\Bigl(1,\frac{0.3135}{0.55}\Bigr)\\
-&= 0.57.
-\end{aligned}
-\]
-Again this agrees with the direct product value
-\[
-v(\text{chase mice},\ExTV\concat\ExNP)
-=0.95\cdot0.60
-=0.57.
-\]
+The recursive value $v(\text{and},(\ExS\backslash \ExS)/\ExS)$ would instead ask whether the
+observed corpus contexts make \emph{and} behave like a right-looking residual expression. That
+is a semantic-support question, not the lexical assignment itself.
 
 \section{Ambiguity in \emph{French wine drinker}}
-Now consider the phrase \emph{French wine drinker}. It has two familiar readings.
+The phrase \emph{French wine drinker} now needs no special atomic types for origin, personhood,
+or beveragehood. The ambiguity is represented entirely by different complex lexical entries.
+
+The first reading is:
+\begin{quote}
+a French person who is a wine drinker.
+\end{quote}
+Here \emph{French} modifies the whole nominal \emph{wine drinker}. The lexical analysis is
+\[
+\text{French}:\ExN/\ExN,
+\qquad
+\text{wine}:\ExN/\ExN,
+\qquad
+\text{drinker}:\ExN.
+\]
+The reduction is
+\[
+(\ExN/\ExN)\concat((\ExN/\ExN)\concat \ExN)
+\vdash_{\LC}
+(\ExN/\ExN)\concat \ExN
+\vdash_{\LC}
+\ExN.
+\]
+The score is
+\[
+0.45\cdot0.85\cdot1=0.3825.
+\]
+
+The second reading is:
+\begin{quote}
+a drinker of French wine.
+\end{quote}
+Here \emph{French} modifies the nominal modifier \emph{wine}, producing the compound modifier
+\emph{French wine}. The lexical analysis is
+\[
+\text{French}:(\ExN/\ExN)/(\ExN/\ExN),
+\qquad
+\text{wine}:\ExN/\ExN,
+\qquad
+\text{drinker}:\ExN.
+\]
+The reduction is
+\[
+((\ExN/\ExN)/(\ExN/\ExN))
+\concat(\ExN/\ExN)
+\concat \ExN
+\vdash_{\LC}
+(\ExN/\ExN)\concat \ExN
+\vdash_{\LC}
+\ExN.
+\]
+The score is
+\[
+0.55\cdot0.85\cdot1=0.4675.
+\]
+
+Thus both readings are grammatically available, but the second receives the higher score in this
+toy lexicon:
+\[
+0.4675 > 0.3825.
+\]
+The ranking comes from the lexical probabilities, while the grammatical availability of each
+reading comes from the Lambek reductions.
+
+\section{Relation to the recursive valuation}
+The examples above use $\Parse$, the lexical parse score. The recursive valuation $v$ still plays
+the role defined in the previous chapter: it interprets formulae over observed corpus fragments
+and supports the semantic consequence relation used in the soundness theorem.
+
+The two layers answer different questions.
 \begin{enumerate}[label=(\roman*)]
-    \item A drinker of French wine.
-    \item A French person who is a wine drinker.
+    \item $\Lex(w,A)$ asks whether a word is assigned type $A$ in the lexicon.
+    \item $\Parse(x,A)$ asks how strongly a string can be parsed as type $A$ using lexical entries and
+    Lambek derivability.
+    \item $v(x,A)$ asks how strongly an observed fragment behaves as an instance of $A$ under the
+    recursive product and residual clauses.
 \end{enumerate}
-In the toy semantics these readings correspond to different formulae, because \emph{French}
-can contribute either $\ExOrig$ or $\ExPers$.
-
-For the first reading, use
-\[
-R_{\mathrm{wine}} = (\ExOrig\concat\ExBev)\concat\ExPerson.
-\]
-Then
-\[
-\begin{aligned}
-v(\text{French wine drinker},R_{\mathrm{wine}})
-&= v(\text{French wine},\ExOrig\concat\ExBev)
-   v(\text{drinker},\ExPerson)\\
-&= v(\text{French},\ExOrig)v(\text{wine},\ExBev)v(\text{drinker},\ExPerson)\\
-&= 0.55\cdot0.75\cdot0.85\\
-&= 0.350625.
-\end{aligned}
-\]
-For the second reading, use
-\[
-R_{\mathrm{person}} = \ExPers\concat(\ExBev\concat\ExPerson).
-\]
-Then
-\[
-\begin{aligned}
-v(\text{French wine drinker},R_{\mathrm{person}})
-&= v(\text{French},\ExPers)
-   v(\text{wine drinker},\ExBev\concat\ExPerson)\\
-&= v(\text{French},\ExPers)v(\text{wine},\ExBev)v(\text{drinker},\ExPerson)\\
-&= 0.45\cdot0.75\cdot0.85\\
-&= 0.286875.
-\end{aligned}
-\]
-Both analyses are available, but they are not equally supported. In this toy corpus the first
-reading is preferred because \emph{French} has slightly stronger support as an origin modifier than
-as a person modifier. A different corpus could reverse the inequality. For example, a corpus
-containing many fragments such as \emph{French chef}, \emph{French artist}, and \emph{French
-drinker}, but few origin uses such as \emph{French wine}, would increase
-$\Lex(\text{French},\ExPers)$ and decrease $\Lex(\text{French},\ExOrig)$.
-
-\section{What the example shows}
-This small calculation illustrates three features of the semantics.
-\begin{enumerate}[label=(\roman*)]
-    \item The semantics is genuinely corpus-relative: only fragments observed in
-    $\mathcal C_{\mathrm{ex}}$ participate in the maxima and minima.
-    \item Product types combine local lexical support and preserve word order. The score for
-    \emph{cats chase mice} is not the same calculation as a hypothetical \emph{mice chase cats}
-    unless that string is also observed.
-    \item Ambiguity is represented numerically rather than eliminated. The two readings of
-    \emph{French wine drinker} correspond to two different formulae with two different values.
-\end{enumerate}
-
-The example is intentionally small, but it captures the intended role of the semantics. A parser
-could generate several candidate Lambek formulae for the same observed string; the valuation
-then supplies a corpus-relative ranking over those candidates.
+This separation is useful because it lets the lexicon contain ordinary complex Lambek types while
+leaving the recursive semantic clauses clean enough for the soundness proof.

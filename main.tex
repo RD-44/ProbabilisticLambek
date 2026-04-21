@@ -73,10 +73,11 @@ The thesis contributes a cleaned-up formalisation of this idea. The semantics is
 finite set of observed corpus fragments, which keeps the recursive clauses well-defined and makes
 explicit the sense in which the model is corpus-relative. Particular attention is paid to technical
 subtleties that obstructed the earlier draft: words outside the corpus vocabulary are excluded
-from the formal domain instead of being given ad hoc values, atomic types not attested for a
+from the formal domain instead of being given ad hoc values, lexical types not attested for a
 word receive probability $0$, and the residual clauses are defined so as to avoid division by
-zero. On the basis of these definitions, a soundness theorem is proved for the algebraic axioms
-of the associative Lambek calculus.
+zero. The revised formalisation also separates direct lexical assignment from the recursive
+semantic valuation. On the basis of these definitions, a soundness theorem is proved for the
+algebraic axioms of the associative Lambek calculus.
 
 The thesis does \emph{not} claim completeness for the probabilistic semantics introduced here.
 On the contrary, it argues that completeness is the natural next problem. Classical completeness
