@@ -80,12 +80,8 @@ Because $v(y,B)>0$, division yields
 \[
 v(x,A) \leq \frac{v(w,C)}{v(y,B)}.
 \]
-As also $v(x,A)\leq 1$, we obtain
-\[
-v(x,A) \leq \min\Bigl(1,\frac{v(w,C)}{v(y,B)}\Bigr).
-\]
-This holds for every admissible witness $y$, so after taking the minimum in the definition of
-$v(x,C/B)$ we conclude that $v(x,A) \leq v(x,C/B)$.
+As also $v(x,A)\leq 1$, the value $v(x,A)$ is bounded above by every element of the set whose
+minimum defines $v(x,C/B)$. Therefore $v(x,A) \leq v(x,C/B)$.
 
 Conversely, assume $A \Sem C/B$. Let $w \in \Frag(\mathcal C)$. We show that
 $v(w,A\concat B) \leq v(w,C)$. Consider any decomposition $w=xy$ with $x,y \in \Frag(\mathcal C)$.
@@ -100,7 +96,7 @@ v(x,A) \leq v(x,C/B).
 Now the definition of $v(x,C/B)$ is a minimum over admissible witnesses, one of which is
 precisely the present decomposition $xy=w$. Hence
 \[
-v(x,C/B) \leq \min\Bigl(1,\frac{v(w,C)}{v(y,B)}\Bigr).
+v(x,C/B) \leq \frac{v(w,C)}{v(y,B)}.
 \]
 Combining the two inequalities and multiplying by $v(y,B)$ gives
 \[
@@ -164,4 +160,3 @@ by zero and the status of unattested strings made the soundness argument unstabl
 domain is restricted to observed fragments and the residual clauses quantify only over positive
 denominators, the argument becomes straightforward.
 \end{remark}
-

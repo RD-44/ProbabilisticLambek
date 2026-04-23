@@ -180,7 +180,7 @@ For $x \in \Frag(\mathcal C)$,
 \[
 v(x,A\backslash B)
 = \min\Bigl(\{1\} \cup
-\Bigl\{\min\bigl(1,\frac{v(w,B)}{v(y,A)}\bigr)
+\Bigl\{\frac{v(w,B)}{v(y,A)}
 \ \Bigm|\ y \in \Frag(\mathcal C),\ yx=w \in \Frag(\mathcal C),\ v(y,A)>0\Bigr\}\Bigr).
 \]
 \end{definition}
@@ -190,7 +190,7 @@ For $x \in \Frag(\mathcal C)$,
 \[
 v(x,B/A)
 = \min\Bigl(\{1\} \cup
-\Bigl\{\min\bigl(1,\frac{v(w,B)}{v(y,A)}\bigr)
+\Bigl\{\frac{v(w,B)}{v(y,A)}
 \ \Bigm|\ y \in \Frag(\mathcal C),\ xy=w \in \Frag(\mathcal C),\ v(y,A)>0\Bigr\}\Bigr).
 \]
 \end{definition}
@@ -204,7 +204,8 @@ First, division by zero is avoided by restricting the residual minima to witness
 denominator, i.e. to contexts $y$ such that $v(y,A)>0$. If no such witness exists, the set in the
 minimum collapses to $\{1\}$ and the value becomes $1$. This is a natural default: in the absence
 of any positively supported counterevidence, the residual connective is not forced below $1$.
-The inner truncation $\min(1,\_)$ ensures that the value stays in the interval $[0,1]$.
+The explicit element $1$ in the outer minimum ensures that the value stays in the interval
+$[0,1]$.
 
 Second, out-of-vocabulary words are excluded from the domain entirely. The semantics is not a
 universal language model over all possible strings; it is a finite, corpus-relative semantics for
